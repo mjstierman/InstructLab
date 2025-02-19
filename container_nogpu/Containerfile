@@ -1,7 +1,7 @@
 FROM registry.fedoraproject.org/fedora-toolbox:40
 EXPOSE 8000
 # Add compile any python tools
-RUN dnf install -y g++ gcc make pip python3 python3-devel python3-GitPython
+RUN dnf install -y g++ gcc make pip python3.11 python3-devel python3-GitPython
 
 # Create /instructlab build folder
 # Get the InstructLab Github release
