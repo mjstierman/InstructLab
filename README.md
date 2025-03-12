@@ -8,6 +8,7 @@ To run this script, you will need the following installed on your computer:
 <ul>
   <li>Docker</li>
   <li>Internet Connection</li>
+  <li>Hugging Face API key</li>
 </ul>
 
 ## How to use
