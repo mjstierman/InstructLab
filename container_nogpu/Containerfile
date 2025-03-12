@@ -1,28 +1,45 @@
-FROM registry.fedoraproject.org/fedora-toolbox:40
-EXPOSE 8000
-# Add compile any python tools
-RUN dnf install -y g++ gcc make pip python3.11 python3.11-devel python3-GitPython
+ARG OS_VERSION=9
+ARG BASE_IMAGE=quay.io/centos/centos:stream${OS_VERSION}
 
-# Create /instructlab build folder
-# Get the InstructLab Github release
-# cd into the directory to build from source
+FROM ${BASE_IMAGE}
+EXPOSE 8000
+
+# Set the latest supported version of Python for InstructLab
+ARG PYTHON_VERSION=3.11
+
+ENV PYTHON_VERSION=${PYTHON_VERSION} \
+    PYTHON=python${PYTHON_VERSION} \
+    PIP_NO_CACHE_DIR=off \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONIOENCODING=utf-8 \
+    PS1="[instructlab \w]\$ "
+
+# Update the machine, install the requirements, and clear the cache
+RUN dnf upgrade --nodocs --refresh -y
+RUN dnf install --nodocs -y g++ gcc git make pip python${PYTHON_VERSION} python${PYTHON_VERSION}-devel
+RUN dnf clean all
+
 RUN mkdir /instructlab
 WORKDIR /instructlab
 
-# BUILD
-RUN python3 -m venv --upgrade-deps venv
+# Create a venv for the AI with the correct version of Python and install
+RUN ${PYTHON} -m venv --upgrade-deps venv
 RUN source venv/bin/activate
-# RUN pip cache remove llama_cpp_python
-RUN pip install git+https://github.com/instructlab/instructlab.git@stable --extra-index-url=https://download.pytorch.org/whl/cpu
+RUN ${PYTHON} -m ensurepip --upgrade
+RUN ${PYTHON} -m pip -v install git+https://github.com/instructlab/instructlab.git@stable --extra-index-url=https://download.pytorch.org/whl/cpu
 
 # Set up ilab and publish
 RUN git clone --recurse-submodules https://github.com/instructlab/taxonomy.git
+
 # Future release, add ability to add your own taxonomy for training
 # VOLUME [ "/taxonomy" ]
+
 RUN  yes '' | /usr/local/bin/ilab init --taxonomy-path /instructlab/taxonomy
+
 # Future release, if custom taxonomy is used, train it.
-RUN /usr/local/bin/ilab download
-RUN /usr/local/bin/ilab serve &
+
+RUN /usr/local/bin/ilab model download
+RUN /usr/local/bin/ilab model serve &
 
 # Future release, add healthcheck
 # HEALTHCHECK
