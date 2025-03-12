@@ -2,27 +2,22 @@ ARG OS_VERSION=9
 ARG BASE_IMAGE=quay.io/centos/centos:stream${OS_VERSION}
 
 FROM ${BASE_IMAGE}
+
 EXPOSE 8000
 
 # Set the latest supported version of Python for InstructLab
 ARG PYTHON_VERSION=3.11
-
-ENV PYTHON_VERSION=${PYTHON_VERSION} \
-    PYTHON=python${PYTHON_VERSION} \
-    PIP_NO_CACHE_DIR=off \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PYTHONIOENCODING=utf-8 \
-    PS1="[instructlab \w]\$ "
+ARG PYTHON=python${PYTHON_VERSION}
 
 # Update the machine, install the requirements, and clear the cache
-RUN dnf upgrade --nodocs --refresh -y
-RUN dnf install --nodocs -y g++ gcc git make pip python${PYTHON_VERSION} python${PYTHON_VERSION}-devel
+RUN dnf upgrade --refresh -y
+RUN dnf install --nodocs -y g++ gcc git make python${PYTHON_VERSION} python${PYTHON_VERSION}-devel
 RUN dnf clean all
 
 RUN mkdir /instructlab
 WORKDIR /instructlab
 
-# Create a venv for the AI with the correct version of Python and install
+# Create a virtual environment for the AI with the correct version of Python and install
 RUN ${PYTHON} -m venv --upgrade-deps venv
 RUN source venv/bin/activate
 RUN ${PYTHON} -m ensurepip --upgrade
@@ -30,18 +25,10 @@ RUN ${PYTHON} -m pip -v install git+https://github.com/instructlab/instructlab.g
 
 # Set up ilab and publish
 RUN git clone --recurse-submodules https://github.com/instructlab/taxonomy.git
-
-# Future release, add ability to add your own taxonomy for training
-# VOLUME [ "/taxonomy" ]
-
 RUN  yes '' | /usr/local/bin/ilab init --taxonomy-path /instructlab/taxonomy
 
-# Future release, if custom taxonomy is used, train it.
+# entrypoint to use users' hf api and launch the bot
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-RUN /usr/local/bin/ilab model download
-RUN /usr/local/bin/ilab model serve &
-
-# Future release, add healthcheck
-# HEALTHCHECK
-
-ENTRYPOINT ["/usr/local/bin/ilab", "chat"]
+ENTRYPOINT ["/entrypoint.sh"]
