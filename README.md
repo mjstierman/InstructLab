@@ -12,8 +12,8 @@ To run this script, you will need the following installed on your computer:
 
 ## How to use
 <ol>
-  <li>Navigate to folder with Containerfile</li>
-  <li>Build the container from the Containerfile</li>
+  <li>Navigate to folder with Dockerfile</li>
+  <li>Build the container from the Dockerfile</li>
       docker build -t instructlab .
   <li>Or, add the container from this repository to your Docker source</li>
   <li>Run the resulting container</li>
